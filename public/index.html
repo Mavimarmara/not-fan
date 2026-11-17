@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>not-fan</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>not-fan</h1>
+      <p class="lede">
+        Quem você segue e não te segue de volta, a partir do export da sua conta.
+        O arquivo é lido neste navegador e não é enviado a lugar nenhum.
+      </p>
+      <form id="compare-form">
+        <label>
+          Link do perfil
+          <input
+            name="profile"
+            type="text"
+            required
+            autocomplete="off"
+            placeholder="https://www.instagram.com/usuario/"
+          />
+        </label>
+        <label>
+          Export do Instagram (.zip)
+          <input name="export" type="file" accept=".zip,application/zip" required />
+        </label>
+        <button type="submit">Comparar</button>
+      </form>
+      <p id="status" role="status"></p>
+      <section id="result" hidden>
+        <p id="summary"></p>
+        <label>
+          Filtrar
+          <input id="filter" type="search" placeholder="nome de usuário" />
+        </label>
+        <div class="columns">
+          <section>
+            <h2 id="not-following-back-title"></h2>
+            <ul id="not-following-back"></ul>
+          </section>
+          <section>
+            <h2 id="not-followed-back-title"></h2>
+            <ul id="not-followed-back"></ul>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
