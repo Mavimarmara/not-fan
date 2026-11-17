@@ -1,0 +1,7 @@
+__pycache__/
+.DS_Store
+
+# Exports do Instagram contêm dados pessoais: nunca versionar.
+*.zip
+instagram-*/
+export*/
