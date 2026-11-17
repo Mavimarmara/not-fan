@@ -154,6 +154,52 @@ function setStatus(message, isError) {
   status.classList.toggle("is-error", isError);
 }
 
+async function getFollowerCount(username) {
+  try {
+    const response = await fetch(
+      `https://www.instagram.com/${username}/`,
+      {
+        headers: {
+          Accept: "text/html",
+        },
+      }
+    );
+
+    if (!response.ok) return null;
+
+    const html = await response.text();
+
+    const match = html.match(
+      /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)/i
+    );
+
+    if (!match) return null;
+
+    const description = match[1];
+
+    const followersMatch = description.match(
+      /([\d.,]+)\s*([KMB]|mil|mi)?\s*(?:followers|seguidores)/i
+    );
+
+    if (!followersMatch) return null;
+
+    const number = parseFloat(followersMatch[1].replace(",", "."));
+
+    const multiplier = {
+      k: 1000,
+      mil: 1000,
+      m: 1000000,
+      mi: 1000000,
+      b: 1000000000,
+    }[(followersMatch[2] || "").toLowerCase()] || 1;
+
+    return Math.round(number * multiplier);
+  } catch (error) {
+    console.warn(`Não foi possível consultar @${username}`, error);
+    return null;
+  }
+}
+
 function showReport(report) {
   const result = document.querySelector("#result");
   const filter = document.querySelector("#filter");
