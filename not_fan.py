@@ -4,6 +4,8 @@ import argparse
 import re
 import sys
 import zipfile
+import httpx
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
@@ -144,6 +146,77 @@ def format_report(report: FollowsReport) -> str:
         ]
     )
 
+class _FollowerCountParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.description = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "meta":
+            return
+
+        attrs = dict(attrs)
+
+        if attrs.get("property") == "og:description":
+            self.description = attrs.get("content")
+
+
+def parse_follower_count(html: str) -> int | None:
+    parser = _FollowerCountParser()
+    parser.feed(html)
+
+    if not parser.description:
+        return None
+
+    match = re.search(
+        r"([\d.,]+)\s*([KMB]|mil|mi)?\s*(?:followers|seguidores)",
+        parser.description,
+        re.IGNORECASE,
+    )
+
+    if not match:
+        return None
+
+    number = match.group(1)
+    suffix = (match.group(2) or "").lower()
+
+    number = number.replace(",", ".")
+    value = float(number)
+
+    multiplier = {
+        "k": 1_000,
+        "mil": 1_000,
+        "m": 1_000_000,
+        "mi": 1_000_000,
+        "b": 1_000_000_000,
+    }.get(suffix, 1)
+
+    return int(value * multiplier)
+
+def get_follower_count(username: str) -> tuple[str, int | None]:
+    url = f"https://www.instagram.com/{username}/"
+
+    try:
+        response = httpx.get(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=10,
+            follow_redirects=True,
+        )
+        response.raise_for_status()
+
+        return username, parse_follower_count(response.text)
+
+    except httpx.HTTPError:
+        return username, None
+
+def get_follower_counts(usernames: list[str]) -> dict[str, int | None]:
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(get_follower_count, usernames)
+
+    return dict(results)
+
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
@@ -155,6 +228,17 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         help="Pasta extraída ou arquivo .zip do export de dados do Instagram",
     )
+    parser.add_argument(
+    "--min-followers",
+    type=int,
+    help="Quantidade mínima de seguidores"
+    )
+    
+    parser.add_argument(
+        "--max-followers",
+        type=int,
+        help="Quantidade máxima de seguidores"
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -163,7 +247,33 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Erro: {error}", file=sys.stderr)
         return 1
 
-    print(format_report(report))
+    if args.min_followers is not None or args.max_followers is not None:
+    usernames = report.not_following_back
+    counts = get_follower_counts(usernames)
+
+    filtered = [
+        (username, count)
+        for username, count in counts.items()
+        if count is not None
+        and (args.min_followers is None or count >= args.min_followers)
+        and (args.max_followers is None or count <= args.max_followers)
+    ]
+
+    print(f"Conta: @{report.owner}")
+    print(f"Perfis analisados: {len(usernames)}")
+    print(f"Perfis encontrados: {len(filtered)}")
+    print()
+
+    print("Você segue e não te segue de volta:")
+    for username, count in sorted(filtered, key=lambda x: x[1]):
+        print(f"- @{username} ({count:,} seguidores)")
+
+    unavailable = sum(count is None for count in counts.values())
+    if unavailable:
+        print(f"\nNão foi possível consultar: {unavailable} perfis")
+
+    else:
+        print(format_report(report))
     return 0
 
 
