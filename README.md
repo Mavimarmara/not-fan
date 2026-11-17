@@ -10,7 +10,7 @@ No Instagram, peça o download das suas informações (Suas informações e perm
 
 ## No navegador
 
-Abra o site, informe o link do perfil e escolha o `.zip` do export. A comparação acontece no seu navegador: o arquivo não é enviado para a Vercel.
+Abra o site e escolha o `.zip` do export. A comparação acontece no seu navegador: o arquivo não é enviado para a Vercel. A conta é lida do próprio export.
 
 O `vercel.json` publica só a pasta `public/`, sem passo de build. Um repositório só com o script Python não tem `index.html`, e a raiz do site responde 404.
 
