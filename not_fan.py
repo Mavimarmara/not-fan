@@ -9,8 +9,9 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse
 
-FOLLOWERS_ENTRY = re.compile(r"(^|/)connections/followers_and_following/followers[^/]*\.html$")
-FOLLOWING_ENTRY = re.compile(r"(^|/)connections/followers_and_following/following[^/]*\.html$")
+# Só as páginas de contas: `following_hashtags.html` lista hashtags e não entra aqui.
+FOLLOWERS_ENTRY = re.compile(r"(^|/)connections/followers_and_following/followers(_\d+)?\.html$")
+FOLLOWING_ENTRY = re.compile(r"(^|/)connections/followers_and_following/following(_\d+)?\.html$")
 PROFILE_HREF = re.compile(r"^https?://(?:www\.)?instagram\.com/(?:_u/)?([A-Za-z0-9._]+)/?$")
 EXPORT_OWNER = re.compile(r"Gerado por\s+([A-Za-z0-9._]+)\s+em\b")
 INSTAGRAM_HOSTS = {"instagram.com", "www.instagram.com"}

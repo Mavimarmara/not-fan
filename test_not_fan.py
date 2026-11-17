@@ -4,6 +4,8 @@ import zipfile
 from pathlib import Path
 
 from not_fan import (
+    FOLLOWERS_ENTRY,
+    FOLLOWING_ENTRY,
     ExportOwnerMismatchError,
     extract_usernames,
     load_follows_report,
@@ -68,6 +70,15 @@ class ExtractUsernamesTest(unittest.TestCase):
     def test_ignores_non_profile_links(self):
         page = '<a href="https://www.instagram.com/p/abc123/">post</a>'
         self.assertEqual(extract_usernames(page), [])
+
+
+class EntryPatternsTest(unittest.TestCase):
+    def test_matches_only_account_pages(self):
+        self.assertTrue(FOLLOWING_ENTRY.search("connections/followers_and_following/following.html"))
+        self.assertTrue(FOLLOWING_ENTRY.search("connections/followers_and_following/following_2.html"))
+        self.assertTrue(FOLLOWERS_ENTRY.search("connections/followers_and_following/followers_1.html"))
+        self.assertFalse(FOLLOWING_ENTRY.search("connections/followers_and_following/following_hashtags.html"))
+        self.assertFalse(FOLLOWERS_ENTRY.search("connections/followers_and_following/recently_unfollowed_profiles.html"))
 
 
 class LoadFollowsReportTest(unittest.TestCase):
